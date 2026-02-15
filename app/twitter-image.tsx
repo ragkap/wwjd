@@ -25,23 +25,15 @@ export default async function Image() {
         }}
       >
         {/* Cross Icon */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '24px',
-          }}
+        <svg
+          width="70"
+          height="70"
+          viewBox="0 0 24 24"
+          fill="#D4A574"
+          style={{ marginBottom: '24px' }}
         >
-          <svg
-            width="70"
-            height="70"
-            viewBox="0 0 24 24"
-            fill="#D4A574"
-          >
-            <path d="M11 2v7H4v4h7v9h2v-9h7V9h-7V2z" />
-          </svg>
-        </div>
+          <path d="M11 2v7H4v4h7v9h2v-9h7V9h-7V2z" />
+        </svg>
 
         {/* Title */}
         <div
