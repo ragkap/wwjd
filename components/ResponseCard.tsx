@@ -81,7 +81,7 @@ export default function ResponseCard({
         </div>
 
         <div className="prose prose-burgundy max-w-none">
-          <p className="text-gray-700 leading-loose whitespace-pre-wrap text-lg tracking-wide">
+          <p className="mx-4 md:mx-10 text-gray-700 leading-loose whitespace-pre-wrap text-lg tracking-wide">
             {formatResponseWithQuotes(situation.response)}
           </p>
         </div>

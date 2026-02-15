@@ -28,7 +28,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 space-y-10">
           {/* Introduction */}
           <div className="text-center max-w-3xl mx-auto">
-            <p className="text-xl text-gray-600 leading-loose tracking-wide">
+            <p className="text-xl text-gray-600 ">
               In moments of uncertainty, we often ask ourselves what the right path
               forward might be. Here, you can share your situation and receive
               thoughtful, biblically-grounded guidance inspired by the teachings and

@@ -92,7 +92,7 @@ export default function SituationPageClient({ situation }: Props) {
         <div className="max-w-4xl mx-auto px-4 space-y-6">
           {/* Share Bar */}
           <div className="flex items-center justify-between bg-white rounded-xl shadow border border-gold-300/20 p-4">
-            <span className="text-gray-600 text-lg">Share this guidance</span>
+            <span className="text-gray-600">Share this guidance</span>
             <div className="flex items-center gap-3 relative">
               {/* Copy Link Button */}
               <button
