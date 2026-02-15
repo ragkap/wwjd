@@ -101,6 +101,27 @@ export async function createRating(
   };
 }
 
+export async function getSituationById(id: number): Promise<Situation | null> {
+  const rows = await sql`
+    SELECT 
+      s.id, s.situation, s.response, s.verses, s.created_at,
+      COALESCE(AVG(r.stars), 0)::float as average_rating,
+      COUNT(r.id)::int as rating_count
+    FROM situations s
+    LEFT JOIN ratings r ON s.id = r.situation_id
+    WHERE s.id = ${id}
+    GROUP BY s.id
+  `;
+
+  if (rows.length === 0) return null;
+
+  const row = rows[0];
+  return {
+    ...row,
+    verses: typeof row.verses === 'string' ? JSON.parse(row.verses) : row.verses
+  } as Situation;
+}
+
 
 // import initSqlJs, { Database } from 'sql.js';
 // import fs from 'fs';
