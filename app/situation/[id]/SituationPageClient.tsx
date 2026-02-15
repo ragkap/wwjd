@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Situation } from '@/lib/db';
 import ResponseCard from '@/components/ResponseCard';
@@ -12,58 +12,53 @@ interface Props {
 export default function SituationPageClient({ situation }: Props) {
   const [copied, setCopied] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [pageUrl, setPageUrl] = useState('');
 
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+  useEffect(() => {
+    setPageUrl(window.location.href);
+  }, []);
+
   const shareText = `WWJD: "${situation.situation.slice(0, 100)}${situation.situation.length > 100 ? '...' : ''}"`;
 
-  // const copyToClipboard = async () => {
-  //   try {
-  //     await navigator.clipboard.writeText(pageUrl);
-  //     setCopied(true);
-  //     setTimeout(() => setCopied(false), 2000);
-  //   } catch (err) {
-  //     console.error('Failed to copy:', err);
-  //   }
-  // };
-
   const copyToClipboard = async () => {
-  try {
-    // Pull directly from the source of truth
-    const currentUrl = window.location.href; 
-    await navigator.clipboard.writeText(currentUrl);
-    
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch (err) {
-    console.error('Failed to copy:', err);
-  }
+    try {
+      const currentUrl = window.location.href;
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
 
   const shareToTwitter = () => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(pageUrl)}`;
+    const currentUrl = window.location.href;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`;
     window.open(url, '_blank');
   };
 
   const shareToFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+    const currentUrl = window.location.href;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
     window.open(url, '_blank');
   };
 
   const shareViaEmail = () => {
+    const currentUrl = window.location.href;
     const subject = encodeURIComponent('Biblical Guidance - What Would Jesus Do?');
-    const body = encodeURIComponent(`I found this helpful guidance:\n\n"${situation.situation}"\n\nRead the full response: ${pageUrl}`);
+    const body = encodeURIComponent(`I found this helpful guidance:\n\n"${situation.situation}"\n\nRead the full response: ${currentUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const nativeShare = async () => {
-    // setShowShareMenu(!showShareMenu);
+    const currentUrl = window.location.href;
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'What Would Jesus Do?',
           text: shareText,
-          url: pageUrl,
+          url: currentUrl,
         });
       } catch (err) {
         console.error('Error sharing:', err);

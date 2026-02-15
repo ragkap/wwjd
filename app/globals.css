@@ -7,23 +7,23 @@
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 18px;
+    font-size: 16px;
     letter-spacing: 0.01em;
   }
 
   body {
     @apply bg-cream-100 text-gray-800 antialiased;
-    line-height: 1.7;
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    letter-spacing: 0.02em;
+    letter-spacing: 0.015em;
     line-height: 1.3;
   }
 
   p {
-    letter-spacing: 0.015em;
-    line-height: 1.8;
+    letter-spacing: 0.01em;
+    line-height: 1.7;
   }
 }
 
@@ -75,13 +75,13 @@
 /* Prose styling for response text */
 .prose {
   @apply text-gray-700;
-  font-size: 1.1rem;
-  line-height: 1.9;
-  letter-spacing: 0.02em;
+  font-size: 1rem;
+  line-height: 1.75;
+  letter-spacing: 0.01em;
 }
 
 .prose p {
-  @apply mb-5 last:mb-0;
+  @apply mb-4 last:mb-0;
 }
 
 .prose strong {
