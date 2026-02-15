@@ -16,15 +16,29 @@ export default function SituationPageClient({ situation }: Props) {
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = `WWJD: "${situation.situation.slice(0, 100)}${situation.situation.length > 100 ? '...' : ''}"`;
 
+  // const copyToClipboard = async () => {
+  //   try {
+  //     await navigator.clipboard.writeText(pageUrl);
+  //     setCopied(true);
+  //     setTimeout(() => setCopied(false), 2000);
+  //   } catch (err) {
+  //     console.error('Failed to copy:', err);
+  //   }
+  // };
+
   const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(pageUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+  try {
+    // Pull directly from the source of truth
+    const currentUrl = window.location.href; 
+    await navigator.clipboard.writeText(currentUrl);
+    
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
   };
+
 
   const shareToTwitter = () => {
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(pageUrl)}`;
@@ -43,6 +57,7 @@ export default function SituationPageClient({ situation }: Props) {
   };
 
   const nativeShare = async () => {
+    // setShowShareMenu(!showShareMenu);
     if (navigator.share) {
       try {
         await navigator.share({

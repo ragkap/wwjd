@@ -12,7 +12,7 @@ interface ResponseCardProps {
 // Helper function to highlight quoted text (Jesus's words)
 function formatResponseWithQuotes(text: string): React.ReactNode[] {
   // Match text within quotation marks (double, single, and curly quotes)
-  const quotePattern = /[""]([^""]+)[""]|"([^"]+)"|'([^']+)'|'([^']+)'/g;
+  const quotePattern = /(?:^|\s)["“'']([^"”'']+)(?:["”''])/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match;
