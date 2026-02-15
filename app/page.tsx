@@ -27,8 +27,8 @@ export default function Home() {
       <main className="flex-1 py-10 md:py-14">
         <div className="max-w-4xl mx-auto px-4 space-y-10">
           {/* Introduction */}
-          <div className="text-center max-w-3xl mx-auto">
-            <p className="text-xl text-gray-600 ">
+          <div className="text-center max-w-4xl mx-auto">
+            <p className="text-lg text-burgundy-500 ">
               In moments of uncertainty, we often ask ourselves what the right path
               forward might be. Here, you can share your situation and receive
               thoughtful, biblically-grounded guidance inspired by the teachings and
@@ -72,10 +72,10 @@ export default function Home() {
       <footer className="bg-cream-200 border-t border-gold-300/30 py-8">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-gray-600 text-base tracking-wide leading-relaxed">
-            &quot;Trust in the Lord with all your heart and lean not on your own
-            understanding.&quot;
-          </p>
-          <p className="text-gold-600 text-base mt-2 tracking-wider">— Proverbs 3:5</p>
+            &quot;<em>Trust in the Lord with all your heart and lean not on your own
+            understanding.</em>&quot; <span className="text-base mt-2 tracking-wider">— Proverbs 3:5</span>
+          </p>          
+          <p className="text-gold-600 text-sm mt-2 tracking-wider">Vibe coded with ❤️ by <a className="underline" href="https://www.linkedin.com/in/ragkap/">@ragkap</a></p>
         </div>
       </footer>
     </div>

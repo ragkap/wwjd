@@ -87,12 +87,12 @@ export default function SituationPageClient({ situation }: Props) {
         <div className="max-w-4xl mx-auto px-4 space-y-6">
           {/* Share Bar */}
           <div className="flex items-center justify-between bg-white rounded-xl shadow border border-gold-300/20 p-4">
-            <span className="text-gray-600">Share this guidance</span>
+            <span className="text-gray-600">Share this:</span>
             <div className="flex items-center gap-3 relative">
               {/* Copy Link Button */}
               <button
                 onClick={copyToClipboard}
-                className="flex items-center gap-2 px-4 py-2 bg-cream-100 hover:bg-cream-200 rounded-lg text-gray-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 transition-colors"
               >
                 {copied ? (
                   <>
@@ -106,7 +106,7 @@ export default function SituationPageClient({ situation }: Props) {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
-                    <span>Copy Link</span>
+                    <span>Copy</span>
                   </>
                 )}
               </button>
