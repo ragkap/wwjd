@@ -20,7 +20,7 @@ async function getDb(): Promise<Database> {
   const wasmBinary = fs.readFileSync(wasmPath);
 
   const SQL = await initSqlJs({
-    wasmBinary,
+    wasmBinary: new Uint8Array(wasmBinary) as any,
   });
 
   // Load existing database or create new one
