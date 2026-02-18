@@ -19,16 +19,20 @@ Format your response as JSON with the following structure:
   "verses": [
     "Book Chapter:Verse - The verse text",
     "Book Chapter:Verse - The verse text"
-  ]
+  ],
+  "tags": ["tag1", "tag2", "tag3"]
 }
 
 Include 2-4 relevant Bible verses that support your guidance. Focus on the teachings of Jesus from the Gospels (Matthew, Mark, Luke, John), but you may also reference other relevant scripture.
+
+For tags, include 2-4 lowercase single-word or short-phrase tags that categorize the situation. Examples: "forgiveness", "family", "workplace", "anger", "grief", "marriage", "parenting", "anxiety", "faith", "finances", "relationships", "honesty", "patience", "love", "conflict".
 
 Remember: Jesus showed compassion to all, especially those who were struggling. He emphasized love, forgiveness, humility, and service to others. Guide others as He would - with patience, wisdom, and unconditional love.`;
 
 export interface WWJDResponse {
   response: string;
   verses: string[];
+  tags: string[];
 }
 
 export async function getWWJDResponse(situation: string): Promise<WWJDResponse> {
@@ -70,6 +74,7 @@ export async function getWWJDResponse(situation: string): Promise<WWJDResponse> 
     return {
       response: parsed.response,
       verses: parsed.verses || [],
+      tags: parsed.tags || [],
     };
   } catch {
     // If JSON parsing fails, extract content manually
@@ -82,6 +87,7 @@ export async function getWWJDResponse(situation: string): Promise<WWJDResponse> 
     return {
       response: text,
       verses: foundVerses.slice(0, 4),
+      tags: [],
     };
   }
 }

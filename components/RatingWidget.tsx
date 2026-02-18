@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface RatingWidgetProps {
-  situationId: number;
+  situationId: number | null;
   onRatingSubmitted?: () => void;
 }
 
@@ -21,6 +21,11 @@ export default function RatingWidget({
   const handleSubmit = async () => {
     if (stars === 0) {
       setError('Please select a rating');
+      return;
+    }
+
+    if (situationId === null) {
+      setError('Cannot rate this response');
       return;
     }
 

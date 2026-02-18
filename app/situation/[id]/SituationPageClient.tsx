@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Situation } from '@/lib/db';
 import ResponseCard from '@/components/ResponseCard';
+import RelatedGuidance from '@/components/RelatedGuidance';
 
 interface Props {
   situation: Situation;
@@ -159,6 +160,12 @@ export default function SituationPageClient({ situation }: Props) {
 
           {/* Response Card */}
           <ResponseCard situation={situation} showRating={true} />
+
+          {/* Related Guidance */}
+          <RelatedGuidance
+            currentSituation={situation.situation}
+            currentId={situation.id}
+          />
 
           {/* Back Link */}
           <div className="text-center pt-4">

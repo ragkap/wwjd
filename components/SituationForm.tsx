@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Situation } from '@/lib/db';
 
 interface SituationFormProps {
@@ -11,6 +11,23 @@ export default function SituationForm({ onResponse }: SituationFormProps) {
   const [situation, setSituation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMac, setIsMac] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    // Detect if user is on Mac for showing correct shortcut hint
+    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (situation.trim() && !isLoading) {
+        formRef.current?.requestSubmit();
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,10 +74,11 @@ export default function SituationForm({ onResponse }: SituationFormProps) {
         biblical guidance on what Jesus would do.
       </p>
 
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} onSubmit={handleSubmit}>
         <textarea
           value={situation}
           onChange={(e) => setSituation(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="For example: I'm struggling to forgive someone who hurt me deeply..."
           className="w-full h-32 p-5 border border-gold-300/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent resize-none text-gray-700 placeholder-gray-400 text-lg leading-relaxed"
           maxLength={400}
@@ -68,9 +86,21 @@ export default function SituationForm({ onResponse }: SituationFormProps) {
         />
 
         <div className="flex items-center justify-between mt-5">
-          <span className="text-base text-gray-500 tracking-wide">
-            {situation.length}/400 characters
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-base text-gray-500 tracking-wide">
+              {situation.length}/400 characters
+            </span>
+            <span className="text-sm text-gray-400 hidden sm:inline-flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono">
+                {isMac ? '⌘' : 'Ctrl'}
+              </kbd>
+              <span>+</span>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono">
+                Enter
+              </kbd>
+              <span className="ml-1">to submit</span>
+            </span>
+          </div>
 
           <button
             type="submit"

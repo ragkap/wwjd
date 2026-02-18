@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Situation } from '@/lib/db';
+import { Situation, SortOption, PaginatedResult } from '@/lib/db';
 import SearchBar from './SearchBar';
 
 // Helper function to format relative time
@@ -34,27 +34,56 @@ function formatTimeAgo(dateString: string): string {
 
 interface SituationListProps {
   refreshTrigger?: number;
+  initialSearch?: string | null;
+  onSearchChange?: () => void;
 }
 
-export default function SituationList({ refreshTrigger }: SituationListProps) {
+const PAGE_SIZE = 10;
+
+export default function SituationList({ refreshTrigger, initialSearch, onSearchChange }: SituationListProps) {
   const [situations, setSituations] = useState<Situation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const fetchSituations = useCallback(async (query?: string) => {
+  // Handle initialSearch from parent (e.g., tag click)
+  useEffect(() => {
+    if (initialSearch) {
+      setSearchQuery(initialSearch);
+      fetchSituations(initialSearch, 1, sortBy);
+    }
+  }, [initialSearch]);
+
+  const fetchSituations = useCallback(async (
+    query?: string,
+    page: number = 1,
+    sort: SortOption = 'recent'
+  ) => {
     try {
       setIsSearching(true);
-      const url = query
-        ? `/api/situations?q=${encodeURIComponent(query)}`
-        : '/api/situations';
-      const response = await fetch(url);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: PAGE_SIZE.toString(),
+        sort,
+      });
+      if (query) {
+        params.set('q', query);
+      }
+
+      const response = await fetch(`/api/situations?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch situations');
       }
-      const data = await response.json();
-      setSituations(data);
+      const data: PaginatedResult = await response.json();
+      setSituations(data.situations);
+      setTotalPages(data.totalPages);
+      setTotal(data.total);
+      setCurrentPage(data.page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -64,16 +93,32 @@ export default function SituationList({ refreshTrigger }: SituationListProps) {
   }, []);
 
   useEffect(() => {
-    fetchSituations();
-  }, [refreshTrigger, fetchSituations]);
+    fetchSituations(searchQuery, 1, sortBy);
+  }, [refreshTrigger, fetchSituations, sortBy]);
 
   const handleSearch = useCallback(
     (query: string) => {
       setSearchQuery(query);
-      fetchSituations(query);
+      setCurrentPage(1);
+      fetchSituations(query, 1, sortBy);
+      onSearchChange?.(); // Clear parent's initialSearch state
     },
-    [fetchSituations]
+    [fetchSituations, sortBy, onSearchChange]
   );
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSortBy(newSort);
+    setCurrentPage(1);
+    fetchSituations(searchQuery, 1, newSort);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+    fetchSituations(searchQuery, newPage, sortBy);
+    // Scroll to top of list
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (isLoading) {
     return (
@@ -108,7 +153,7 @@ export default function SituationList({ refreshTrigger }: SituationListProps) {
       <div className="text-center py-12">
         <p className="text-red-600 text-lg">{error}</p>
         <button
-          onClick={() => fetchSituations()}
+          onClick={() => fetchSituations(searchQuery, currentPage, sortBy)}
           className="mt-4 text-burgundy-600 hover:text-burgundy-700 underline text-lg"
         >
           Try again
@@ -118,7 +163,8 @@ export default function SituationList({ refreshTrigger }: SituationListProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
       <div>
         <h2 className="font-serif text-3xl text-burgundy-700 tracking-wide mb-3">
           Community Guidance
@@ -126,35 +172,31 @@ export default function SituationList({ refreshTrigger }: SituationListProps) {
         <p className="text-gray-600 text-lg leading-relaxed mb-6">
           You are not alone. Browse guidance shared by others who have faced similar challenges.
         </p>
-        <SearchBar onSearch={handleSearch} />
       </div>
 
-      {isSearching && (
-        <div className="text-center py-4">
-          <svg
-            className="animate-spin h-6 w-6 text-burgundy-600 mx-auto"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
+      {/* Search and Sort Controls */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <SearchBar onSearch={handleSearch} initialValue={searchQuery} />
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <label htmlFor="sort" className="text-gray-600 text-sm whitespace-nowrap">
+            Sort by:
+          </label>
+          <select
+            id="sort"
+            value={sortBy}
+            onChange={(e) => handleSortChange(e.target.value as SortOption)}
+            className="px-4 py-2 border border-gold-300/50 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent"
+          >
+            <option value="recent">Most Recent</option>
+            <option value="top_rated">Highest Rated</option>
+            <option value="most_rated">Most Ratings</option>
+          </select>
+        </div>
+      </div>
 
-      {!isSearching && situations.length === 0 && (
+      {situations.length === 0 && !isSearching && (
         <div className="text-center py-12">
           <svg
             className="w-16 h-16 text-gold-400 mx-auto mb-4"
@@ -189,68 +231,191 @@ export default function SituationList({ refreshTrigger }: SituationListProps) {
         </div>
       )}
 
-      {!isSearching && situations.length > 0 && (
-        <div className="space-y-4">
-          {searchQuery && (
-            <p className="text-gray-600 text-lg">
-              Found {situations.length} {situations.length === 1 ? 'result' : 'results'} for &quot;{searchQuery}&quot;
-            </p>
+      {situations.length > 0 && (
+        <div className={`relative ${isSearching ? 'opacity-60' : ''} transition-opacity`}>
+          {/* Loading overlay */}
+          {isSearching && (
+            <div className="absolute inset-0 flex items-start justify-center pt-8 z-10">
+              <svg
+                className="animate-spin h-6 w-6 text-burgundy-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            </div>
           )}
-          {situations.map((situation) => (
-            <Link
-              key={situation.id}
-              href={`/situation/${situation.id}`}
-              className="block bg-white rounded-xl shadow border border-gold-300/20 p-6 hover:shadow-md hover:border-gold-400/40 transition-all"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400 tracking-wide">
-                  {formatTimeAgo(situation.created_at)}
-                </span>
-              </div>
-              <p className="text-gray-700 line-clamp-2 text-lg leading-relaxed">
-                &quot;{situation.situation}&quot;
+
+          {/* Results info */}
+          <div className="flex items-center justify-between text-gray-600">
+            <p>
+              {searchQuery ? (
+                <>Found {total} {total === 1 ? 'result' : 'results'} for &quot;{searchQuery}&quot;</>
+              ) : (
+                <>{total} {total === 1 ? 'guidance' : 'guidances'} shared</>
+              )}
+            </p>
+            {totalPages > 1 && (
+              <p className="text-sm">
+                Page {currentPage} of {totalPages}
               </p>
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className={`w-5 h-5 ${
-                        star <= Math.round(situation.average_rating || 0)
-                          ? 'text-gold-500'
-                          : 'text-gray-300'
-                      }`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                  {situation.rating_count !== undefined && situation.rating_count > 0 && (
-                    <span className="text-sm text-gray-500 ml-1">
-                      ({situation.rating_count})
-                    </span>
-                  )}
+            )}
+          </div>
+
+          {/* Situation cards */}
+          <div className="space-y-4">
+            {situations.map((situation) => (
+              <Link
+                key={situation.id}
+                href={`/situation/${situation.id}`}
+                className="block bg-white rounded-xl shadow border border-gold-300/20 p-6 hover:shadow-md hover:border-gold-400/40 transition-all"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-400 tracking-wide">
+                    {formatTimeAgo(situation.created_at)}
+                  </span>
                 </div>
-                <span className="text-base text-burgundy-600 flex items-center gap-2 font-medium">
-                  Read guidance
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </span>
+                <p className="text-gray-700 line-clamp-2 text-lg leading-relaxed">
+                  &quot;{situation.situation}&quot;
+                </p>
+                {/* Tags */}
+                {situation.tags && situation.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {situation.tags.map((tag, idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSearch(tag);
+                        }}
+                        className="px-2.5 py-1 bg-cream-100 hover:bg-gold-100 text-burgundy-600 text-sm rounded-full border border-gold-300/50 transition-colors"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= Math.round(situation.average_rating || 0)
+                            ? 'text-gold-500'
+                            : 'text-gray-300'
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                    {situation.rating_count !== undefined && situation.rating_count > 0 && (
+                      <span className="text-sm text-gray-500 ml-1">
+                        ({situation.rating_count})
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-base text-burgundy-600 flex items-center gap-2 font-medium">
+                    Read guidance
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              {/* Previous button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg border border-gold-300/50 text-gray-700 hover:bg-cream-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    // Show first, last, current, and pages around current
+                    if (page === 1 || page === totalPages) return true;
+                    if (Math.abs(page - currentPage) <= 1) return true;
+                    return false;
+                  })
+                  .reduce((acc: (number | string)[], page, idx, arr) => {
+                    // Add ellipsis between non-consecutive pages
+                    if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
+                      acc.push('...');
+                    }
+                    acc.push(page);
+                    return acc;
+                  }, [])
+                  .map((item, idx) => (
+                    typeof item === 'number' ? (
+                      <button
+                        key={idx}
+                        onClick={() => handlePageChange(item)}
+                        className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                          currentPage === item
+                            ? 'bg-burgundy-600 text-white'
+                            : 'border border-gold-300/50 text-gray-700 hover:bg-cream-50'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    ) : (
+                      <span key={idx} className="px-2 text-gray-400">
+                        {item}
+                      </span>
+                    )
+                  ))}
               </div>
-            </Link>
-          ))}
+
+              {/* Next button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg border border-gold-300/50 text-gray-700 hover:bg-cream-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -5,13 +5,22 @@ import { useState, useEffect } from 'react';
 interface SearchBarProps {
   onSearch: (query: string) => void;
   placeholder?: string;
+  initialValue?: string;
 }
 
 export default function SearchBar({
   onSearch,
   placeholder = 'Search for guidance on forgiveness, anxiety, relationships...',
+  initialValue = '',
 }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialValue);
+
+  // Sync with initialValue when it changes (e.g., from tag click)
+  useEffect(() => {
+    if (initialValue !== query) {
+      setQuery(initialValue);
+    }
+  }, [initialValue]);
 
   // Debounce search
   useEffect(() => {

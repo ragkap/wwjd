@@ -4,20 +4,32 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import SituationForm from '@/components/SituationForm';
 import ResponseCard from '@/components/ResponseCard';
+import RelatedGuidance from '@/components/RelatedGuidance';
 import SituationList from '@/components/SituationList';
 import { Situation } from '@/lib/db';
 
 export default function Home() {
   const [currentResponse, setCurrentResponse] = useState<Situation | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [tagSearch, setTagSearch] = useState<string | null>(null);
 
   const handleResponse = (situation: Situation) => {
     setCurrentResponse(situation);
-    setRefreshTrigger((prev) => prev + 1);
+    // Only refresh the community list if this was a new saved response
+    // (not moderated and not matched from existing)
+    if (!situation.moderated && !situation.matchedFrom) {
+      setRefreshTrigger((prev) => prev + 1);
+    }
   };
 
   const handleRatingSubmitted = () => {
     setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleTagClick = (tag: string) => {
+    setTagSearch(tag);
+    // Scroll to community section
+    document.getElementById('community-guidance')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -41,12 +53,21 @@ export default function Home() {
 
           {/* Current Response */}
           {currentResponse && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in space-y-6">
               <ResponseCard
                 situation={currentResponse}
-                showRating={true}
+                showRating={!currentResponse.moderated}
+                showShare={!currentResponse.moderated && !!currentResponse.id}
                 onRatingSubmitted={handleRatingSubmitted}
+                onTagClick={handleTagClick}
               />
+              {/* Related Guidance - show for non-moderated responses */}
+              {!currentResponse.moderated && (
+                <RelatedGuidance
+                  currentSituation={currentResponse.situation}
+                  currentId={currentResponse.id}
+                />
+              )}
             </div>
           )}
 
@@ -64,7 +85,13 @@ export default function Home() {
           </div>
 
           {/* Previous Situations */}
-          <SituationList refreshTrigger={refreshTrigger} />
+          <div id="community-guidance">
+            <SituationList
+              refreshTrigger={refreshTrigger}
+              initialSearch={tagSearch}
+              onSearchChange={() => setTagSearch(null)}
+            />
+          </div>
         </div>
       </main>
 
