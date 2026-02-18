@@ -124,7 +124,7 @@ export async function moderateContent(text: string): Promise<ModerationResult> {
 
     // Get all flagged categories
     const flaggedCategories: string[] = [];
-    const categories = result.categories as Record<string, boolean>;
+    const categories = result.categories as unknown as Record<string, boolean>;
 
     for (const [category, flagged] of Object.entries(categories)) {
       if (flagged) {

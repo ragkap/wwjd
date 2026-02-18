@@ -38,16 +38,6 @@ export default function Home() {
 
       <main className="flex-1 py-10 md:py-14">
         <div className="max-w-4xl mx-auto px-4 space-y-10">
-          {/* Introduction */}
-          <div className="text-center max-w-4xl mx-auto">
-            <p className="text-lg text-burgundy-500 ">
-              In moments of uncertainty, we often ask ourselves what the right path
-              forward might be. Here, you can share your situation and receive
-              thoughtful, biblically-grounded guidance inspired by the teachings and
-              example of Jesus Christ.
-            </p>
-          </div>
-
           {/* Submission Form */}
           <SituationForm onResponse={handleResponse} />
 
