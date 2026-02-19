@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { createPrayerRequest, getPrayerRequests } from '@/lib/user-db';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const requests = await getPrayerRequests();
+    const searchParams = request.nextUrl.searchParams;
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const requests = await getPrayerRequests(limit);
     return NextResponse.json({ requests });
   } catch (error) {
     console.error('Error in prayer requests GET:', error);

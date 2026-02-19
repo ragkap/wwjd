@@ -1,9 +1,18 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import UserMenu from './UserMenu';
 
 export default function Header() {
+  const router = useRouter();
+
+  const handleLogoClick = () => {
+    // Force navigation to clean home page (no query params)
+    router.push('/');
+    // If already on home, this ensures state resets by triggering a re-render
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <header className="bg-cream-100 border-b border-gold-300/30">
       <div className="max-w-4xl mx-auto px-4 py-6">
@@ -11,7 +20,7 @@ export default function Header() {
           {/* Spacer for centering - hidden on mobile */}
           <div className="w-10 sm:w-24 hidden sm:block" />
 
-          <Link href="/" className="flex flex-col items-center hover:opacity-90 transition-opacity">
+          <button onClick={handleLogoClick} className="flex flex-col items-center hover:opacity-90 transition-opacity">
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Cross Icon - hidden on very small screens */}
               <svg
@@ -38,7 +47,7 @@ export default function Header() {
             <p className="text-gold-600 text-xs sm:text-sm mt-1 font-medium tracking-wider">
               Biblical Guidance for Life&apos;s Journey
             </p>
-          </Link>
+          </button>
 
           {/* User Menu */}
           <div className="w-10 sm:w-24 flex justify-end">

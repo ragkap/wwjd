@@ -10,6 +10,7 @@ interface ResponseCardProps {
   situation: Situation;
   showRating?: boolean;
   showShare?: boolean;
+  showPrayerPrompt?: boolean;
   onRatingSubmitted?: () => void;
   onTagClick?: (tag: string) => void;
 }
@@ -57,6 +58,7 @@ export default function ResponseCard({
   situation,
   showRating = true,
   showShare = false,
+  showPrayerPrompt = false,
   onRatingSubmitted,
   onTagClick,
 }: ResponseCardProps) {
@@ -68,6 +70,10 @@ export default function ResponseCard({
   const [isSaving, setIsSaving] = useState(false);
   const [followedTopics, setFollowedTopics] = useState<Set<string>>(new Set());
   const [followingTopic, setFollowingTopic] = useState<string | null>(null);
+  const [showPrayerInput, setShowPrayerInput] = useState(false);
+  const [prayerRequest, setPrayerRequest] = useState('');
+  const [isSubmittingPrayer, setIsSubmittingPrayer] = useState(false);
+  const [prayerSubmitted, setPrayerSubmitted] = useState(false);
 
   // Check if guidance is saved and fetch followed topics
   useEffect(() => {
@@ -183,6 +189,35 @@ export default function ResponseCard({
       }
     } else {
       setShowShareMenu(!showShareMenu);
+    }
+  };
+
+  const submitPrayerRequest = async () => {
+    if (!prayerRequest.trim()) return;
+    if (!session?.user) {
+      signIn('google', { callbackUrl: window.location.href });
+      return;
+    }
+
+    setIsSubmittingPrayer(true);
+    try {
+      const res = await fetch('/api/prayer-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request: prayerRequest.trim(),
+          situationId: situation.id
+        }),
+      });
+      if (res.ok) {
+        setPrayerSubmitted(true);
+        setPrayerRequest('');
+        setShowPrayerInput(false);
+      }
+    } catch (error) {
+      console.error('Error submitting prayer request:', error);
+    } finally {
+      setIsSubmittingPrayer(false);
     }
   };
 
@@ -502,6 +537,89 @@ export default function ResponseCard({
           <span className="text-sm text-gray-600">
             ({situation.rating_count} {situation.rating_count === 1 ? 'rating' : 'ratings'})
           </span>
+        </div>
+      )}
+
+      {/* Prayer Prompt */}
+      {showPrayerPrompt && !situation.moderated && (
+        <div className="px-4 sm:px-8 py-5 border-t border-gold-300/20 bg-gradient-to-r from-cream-50 to-white">
+          {prayerSubmitted ? (
+            <div className="flex items-center gap-3 text-green-700 bg-green-50 px-4 py-3 rounded-xl">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium">Your prayer request has been shared with the community</span>
+            </div>
+          ) : showPrayerInput ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-burgundy-700">
+                <span className="text-xl">🙏</span>
+                <span className="font-medium text-sm">Share a prayer request related to this situation</span>
+              </div>
+              <textarea
+                value={prayerRequest}
+                onChange={(e) => setPrayerRequest(e.target.value)}
+                placeholder="What would you like the community to pray for?"
+                className="w-full h-20 p-3 border border-gold-300/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent resize-none text-gray-700 placeholder-gray-400 text-sm"
+                maxLength={300}
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">{prayerRequest.length}/300</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowPrayerInput(false)}
+                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitPrayerRequest}
+                    disabled={!prayerRequest.trim() || isSubmittingPrayer}
+                    className="px-4 py-2 bg-burgundy-600 hover:bg-burgundy-700 text-white text-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    {isSubmittingPrayer ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <span>Sharing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Share Prayer</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {session?.user ? 'Shared anonymously with the community' : 'Sign in required to share'}
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                if (!session?.user) {
+                  signIn('google', { callbackUrl: window.location.href });
+                } else {
+                  setShowPrayerInput(true);
+                }
+              }}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-cream-100 hover:bg-gold-100 border border-gold-300/50 rounded-xl transition-colors group"
+            >
+              <span className="text-xl group-hover:scale-110 transition-transform">🙏</span>
+              <span className="text-burgundy-700 font-medium text-sm">
+                {session?.user ? 'Need prayer for this situation?' : 'Sign in to request prayer'}
+              </span>
+              <svg className="w-4 h-4 text-burgundy-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
         </div>
       )}
     </div>

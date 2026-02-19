@@ -7,6 +7,7 @@ import SituationForm from '@/components/SituationForm';
 import ResponseCard from '@/components/ResponseCard';
 import RelatedGuidance from '@/components/RelatedGuidance';
 import SituationList from '@/components/SituationList';
+import PrayerPreview from '@/components/PrayerPreview';
 import { Situation } from '@/lib/db';
 
 function HomeContent() {
@@ -62,6 +63,7 @@ function HomeContent() {
                 situation={currentResponse}
                 showRating={!currentResponse.moderated}
                 showShare={!currentResponse.moderated && !!currentResponse.id}
+                showPrayerPrompt={!currentResponse.moderated}
                 onRatingSubmitted={handleRatingSubmitted}
                 onTagClick={handleTagClick}
               />
@@ -96,6 +98,9 @@ function HomeContent() {
               onSearchChange={() => setTagSearch(null)}
             />
           </div>
+
+          {/* Prayer Wall Preview - after Community Guidance */}
+          <PrayerPreview />
         </div>
       </main>
 
