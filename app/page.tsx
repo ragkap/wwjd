@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import SituationForm from '@/components/SituationForm';
@@ -9,7 +9,7 @@ import RelatedGuidance from '@/components/RelatedGuidance';
 import SituationList from '@/components/SituationList';
 import { Situation } from '@/lib/db';
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [currentResponse, setCurrentResponse] = useState<Situation | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -104,11 +104,23 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-gray-600 text-base tracking-wide leading-relaxed">
             &quot;<em>Trust in the Lord with all your heart and lean not on your own
-            understanding.</em>&quot; <span className="text-base mt-2 tracking-wider">— Proverbs 3:5</span>
-          </p>          
+            understanding.</em>&quot; <span className="block text-base mt-2 tracking-wider">— Proverbs 3:5</span>
+          </p>
           <p className="text-gold-600 text-sm mt-2 tracking-wider">Vibe coded with ❤️ by <a className="underline" href="https://www.linkedin.com/in/ragkap/">@ragkap</a></p>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-burgundy-600"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
