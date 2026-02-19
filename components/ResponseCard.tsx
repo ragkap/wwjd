@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Situation } from '@/lib/db';
 import RatingWidget from './RatingWidget';
 
@@ -58,8 +60,88 @@ export default function ResponseCard({
   onRatingSubmitted,
   onTagClick,
 }: ResponseCardProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [followedTopics, setFollowedTopics] = useState<Set<string>>(new Set());
+  const [followingTopic, setFollowingTopic] = useState<string | null>(null);
+
+  // Check if guidance is saved and fetch followed topics
+  useEffect(() => {
+    if (session?.user) {
+      if (situation.id) {
+        fetch(`/api/user/saved?situationId=${situation.id}`)
+          .then(res => res.json())
+          .then(data => setIsSaved(data.saved))
+          .catch(() => {});
+      }
+      // Fetch followed topics
+      fetch('/api/user/topics')
+        .then(res => res.json())
+        .then(data => setFollowedTopics(new Set(data.topics || [])))
+        .catch(() => {});
+    }
+  }, [session, situation.id]);
+
+  const toggleFollowTopic = async (topic: string) => {
+    if (!session?.user) {
+      signIn('google', { callbackUrl: window.location.href });
+      return;
+    }
+    setFollowingTopic(topic);
+    const isFollowing = followedTopics.has(topic.toLowerCase());
+
+    try {
+      const method = isFollowing ? 'DELETE' : 'POST';
+      const res = await fetch('/api/user/topics', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+
+      if (res.ok) {
+        setFollowedTopics(prev => {
+          const newSet = new Set(prev);
+          if (isFollowing) {
+            newSet.delete(topic.toLowerCase());
+          } else {
+            newSet.add(topic.toLowerCase());
+          }
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling topic follow:', error);
+    } finally {
+      setFollowingTopic(null);
+    }
+  };
+
+  const toggleSave = async () => {
+    if (!situation.id) return;
+    if (!session?.user) {
+      signIn('google', { callbackUrl: window.location.href });
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const method = isSaved ? 'DELETE' : 'POST';
+      const res = await fetch('/api/user/saved', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: situation.id }),
+      });
+      const data = await res.json();
+      setIsSaved(data.saved);
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const shareUrl = situation.id ? `${typeof window !== 'undefined' ? window.location.origin : ''}/situation/${situation.id}` : '';
   const shareText = `WWJD: "${situation.situation.slice(0, 100)}${situation.situation.length > 100 ? '...' : ''}"`;
@@ -107,18 +189,18 @@ export default function ResponseCard({
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gold-300/20 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-burgundy-600 to-burgundy-700 px-8 py-5">
-        <h3 className="font-serif text-2xl text-white tracking-wide">Your Situation</h3>
+      <div className="bg-gradient-to-r from-burgundy-600 to-burgundy-700 px-4 sm:px-8 py-5">
+        <h3 className="font-serif text-xl sm:text-2xl text-white tracking-wide">Your Situation</h3>
       </div>
 
       {/* Situation text */}
-      <div className="px-8 py-5 bg-cream-50 border-b border-gold-300/20">
+      <div className="px-4 sm:px-8 py-5 bg-cream-50 border-b border-gold-300/20">
         <p className="text-gray-700 italic text-lg leading-relaxed">&quot;{situation.situation}&quot;</p>
       </div>
 
       {/* Similar question banner */}
       {situation.matchedFrom && (
-        <div className="px-8 py-4 bg-blue-50 border-b border-blue-200 flex items-start gap-3">
+        <div className="px-4 sm:px-8 py-4 bg-blue-50 border-b border-blue-200 flex items-start gap-3">
           <svg
             className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5"
             fill="none"
@@ -147,7 +229,7 @@ export default function ResponseCard({
 
       {/* Care Banner for moderated content */}
       {situation.moderated && (
-        <div className="px-8 py-4 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
+        <div className="px-4 sm:px-8 py-4 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
           <svg
             className="w-6 h-6 text-amber-600 flex-shrink-0"
             fill="none"
@@ -168,7 +250,7 @@ export default function ResponseCard({
       )}
 
       {/* Response */}
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-4 sm:px-4 sm:px-8 py-4 sm:py-6 sm:py-8">
         <div className="flex items-center gap-3 mb-5">
           <svg
             className="w-7 h-7 text-gold-500"
@@ -181,13 +263,13 @@ export default function ResponseCard({
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             )}
           </svg>
-          <h4 className="font-serif text-2xl text-burgundy-700 tracking-wide">
+          <h4 className="font-serif text-xl sm:text-2xl text-burgundy-700 tracking-wide">
             {situation.moderated ? 'A Message of Care' : 'What Jesus Would Do'}
           </h4>
         </div>
 
         <div className="prose prose-burgundy max-w-none">
-          <p className="mx-4 md:mx-10 text-gray-700 leading-loose whitespace-pre-wrap text-lg tracking-wide">
+          <p className="sm:mx-4 md:mx-10 text-gray-700 leading-relaxed sm:leading-loose whitespace-pre-wrap text-base sm:text-lg tracking-wide">
             {formatResponseWithQuotes(situation.response)}
           </p>
         </div>
@@ -195,7 +277,7 @@ export default function ResponseCard({
 
       {/* Scripture References */}
       {situation.verses && situation.verses.length > 0 && (
-        <div className="px-8 py-6 bg-cream-50 border-t border-gold-300/20">
+        <div className="px-4 sm:px-4 sm:px-8 py-4 sm:py-6 bg-cream-50 border-t border-gold-300/20">
           <h5 className="font-medium text-burgundy-700 mb-4 flex items-center gap-3 text-lg tracking-wide">
             <svg
               className="w-6 h-6"
@@ -225,27 +307,107 @@ export default function ResponseCard({
         </div>
       )}
 
-      {/* Tags */}
-      {situation.tags && situation.tags.length > 0 && (
-        <div className="px-8 py-4 border-t border-gold-300/20 flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-gray-500">Topics:</span>
-          {situation.tags.map((tag, idx) => (
-            <button
-              key={idx}
-              onClick={() => onTagClick?.(tag)}
-              className={`px-3 py-1 bg-cream-100 text-burgundy-600 text-sm rounded-full border border-gold-300/50 ${
-                onTagClick ? 'hover:bg-gold-100 cursor-pointer transition-colors' : ''
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
+      {/* Tags and Save Button Row */}
+      {(situation.tags && situation.tags.length > 0) || situation.id ? (
+        <div className="px-4 sm:px-8 py-4 border-t border-gold-300/20 flex items-center justify-between flex-wrap gap-3">
+          {/* Tags */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {situation.tags && situation.tags.length > 0 && (
+              <>
+                <span className="text-sm text-gray-500">Topics:</span>
+                {situation.tags.map((tag, idx) => {
+                  const isFollowing = followedTopics.has(tag.toLowerCase());
+                  const isToggling = followingTopic === tag;
+
+                  return (
+                    <div key={idx} className="flex items-stretch">
+                      <button
+                        onClick={() => {
+                          if (onTagClick) {
+                            onTagClick(tag);
+                          } else {
+                            router.push(`/?tag=${encodeURIComponent(tag)}`);
+                          }
+                        }}
+                        className="px-3 py-1 bg-cream-100 text-burgundy-600 text-sm border border-gold-300/50 hover:bg-gold-100 cursor-pointer transition-colors rounded-l-full border-r-0"
+                      >
+                        {tag}
+                      </button>
+                      <button
+                        onClick={() => toggleFollowTopic(tag)}
+                        disabled={isToggling}
+                        title={isFollowing ? 'Unfollow topic' : session?.user ? 'Follow topic' : 'Sign in to follow'}
+                        className={`px-1.5 text-sm rounded-r-full border border-gold-300/50 transition-all duration-200 flex items-center justify-center ${
+                          isFollowing
+                            ? 'bg-gold-400 text-white border-gold-400 hover:bg-gold-500'
+                            : 'bg-cream-100 text-gray-500 hover:bg-gold-100 hover:text-burgundy-600'
+                        } ${isToggling ? 'opacity-50' : ''}`}
+                      >
+                        {isToggling ? (
+                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        ) : isFollowing ? (
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+
+          {/* Save Button - visible to all users */}
+          {situation.id && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleSave}
+                disabled={isSaving}
+                title={isSaved ? 'Remove from saved' : session?.user ? 'Save this guidance' : 'Sign in to save guidance'}
+                className={`group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isSaved
+                    ? 'bg-gradient-to-r from-gold-400 to-gold-500 text-white shadow-lg ring-2 ring-gold-300 ring-offset-2'
+                    : 'bg-burgundy-600 text-white hover:bg-burgundy-700 shadow-md hover:shadow-lg hover:scale-105'
+                } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
+              >
+                <svg
+                  className={`w-5 h-5 transition-transform duration-300 ${
+                    isSaved ? 'animate-bounce-once' : 'group-hover:scale-110'
+                  }`}
+                  fill={isSaved ? 'currentColor' : 'none'}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={isSaved ? 0 : 2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+                <span>{isSaving ? 'Saving...' : isSaved ? 'Saved!' : 'Save for Later'}</span>
+              </button>
+              {isSaved && session?.user && (
+                <span className="text-xs text-gray-500 animate-fade-in">
+                  Find in <a href="/my-guidance" className="text-burgundy-600 hover:underline font-medium">My Saved Guidance</a>
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      ) : null}
 
       {/* Share Bar */}
       {showShare && situation.id && (
-        <div className="px-8 py-4 border-t border-gold-300/20 flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-4 border-t border-gold-300/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <span className="text-sm text-gray-500">Share this guidance:</span>
           <div className="flex items-center gap-2 relative">
             {/* Copy Link */}

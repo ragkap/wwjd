@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import SituationForm from '@/components/SituationForm';
 import ResponseCard from '@/components/ResponseCard';
@@ -9,9 +10,22 @@ import SituationList from '@/components/SituationList';
 import { Situation } from '@/lib/db';
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [currentResponse, setCurrentResponse] = useState<Situation | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [tagSearch, setTagSearch] = useState<string | null>(null);
+
+  // Read tag from URL query parameter
+  useEffect(() => {
+    const tag = searchParams.get('tag');
+    if (tag) {
+      setTagSearch(tag);
+      // Scroll to community section after a short delay
+      setTimeout(() => {
+        document.getElementById('community-guidance')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [searchParams]);
 
   const handleResponse = (situation: Situation) => {
     setCurrentResponse(situation);

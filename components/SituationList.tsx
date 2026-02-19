@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession, signIn } from 'next-auth/react';
 import { Situation, SortOption, PaginatedResult } from '@/lib/db';
 import SearchBar from './SearchBar';
 
@@ -41,6 +42,7 @@ interface SituationListProps {
 const PAGE_SIZE = 10;
 
 export default function SituationList({ refreshTrigger, initialSearch, onSearchChange }: SituationListProps) {
+  const { data: session } = useSession();
   const [situations, setSituations] = useState<Situation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,54 @@ export default function SituationList({ refreshTrigger, initialSearch, onSearchC
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [followedTopics, setFollowedTopics] = useState<Set<string>>(new Set());
+  const [followingTopic, setFollowingTopic] = useState<string | null>(null);
+
+  // Fetch followed topics for logged-in users
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/user/topics')
+        .then(res => res.json())
+        .then(data => setFollowedTopics(new Set(data.topics || [])))
+        .catch(() => {});
+    }
+  }, [session]);
+
+  const toggleFollowTopic = async (topic: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!session?.user) {
+      signIn('google', { callbackUrl: window.location.href });
+      return;
+    }
+    setFollowingTopic(topic);
+    const isFollowing = followedTopics.has(topic.toLowerCase());
+
+    try {
+      const method = isFollowing ? 'DELETE' : 'POST';
+      const res = await fetch('/api/user/topics', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+
+      if (res.ok) {
+        setFollowedTopics(prev => {
+          const newSet = new Set(prev);
+          if (isFollowing) {
+            newSet.delete(topic.toLowerCase());
+          } else {
+            newSet.add(topic.toLowerCase());
+          }
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling topic follow:', error);
+    } finally {
+      setFollowingTopic(null);
+    }
+  };
 
   // Handle initialSearch from parent (e.g., tag click)
   useEffect(() => {
@@ -294,19 +344,50 @@ export default function SituationList({ refreshTrigger, initialSearch, onSearchC
                 {/* Tags */}
                 {situation.tags && situation.tags.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {situation.tags.map((tag, idx) => (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleSearch(tag);
-                        }}
-                        className="px-2.5 py-1 bg-cream-100 hover:bg-gold-100 text-burgundy-600 text-sm rounded-full border border-gold-300/50 transition-colors"
-                      >
-                        {tag}
-                      </button>
-                    ))}
+                    {situation.tags.map((tag, idx) => {
+                      const isFollowing = followedTopics.has(tag.toLowerCase());
+                      const isToggling = followingTopic === tag;
+
+                      return (
+                        <div key={idx} className="flex items-stretch">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleSearch(tag);
+                            }}
+                            className="px-2.5 py-1 bg-cream-100 hover:bg-gold-100 text-burgundy-600 text-sm border border-gold-300/50 transition-colors rounded-l-full border-r-0"
+                          >
+                            {tag}
+                          </button>
+                          <button
+                            onClick={(e) => toggleFollowTopic(tag, e)}
+                            disabled={isToggling}
+                            title={isFollowing ? 'Unfollow topic' : session?.user ? 'Follow topic' : 'Sign in to follow'}
+                            className={`px-1.5 py-1 text-sm rounded-r-full border border-gold-300/50 transition-all duration-200 flex items-center justify-center ${
+                              isFollowing
+                                ? 'bg-gold-400 text-white border-gold-400 hover:bg-gold-500'
+                                : 'bg-cream-100 text-gray-500 hover:bg-gold-100 hover:text-burgundy-600'
+                            } ${isToggling ? 'opacity-50' : ''}`}
+                          >
+                            {isToggling ? (
+                              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              </svg>
+                            ) : isFollowing ? (
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 <div className="mt-4 flex items-center justify-between">
