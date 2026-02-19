@@ -62,12 +62,14 @@ export default function PrayerPreview() {
 
   if (isLoading) {
     return (
-      <div className="bg-cream-50/50 rounded-xl border border-gold-300/20 p-4">
-        <div className="animate-pulse space-y-3">
-          <div className="h-5 bg-gray-200 rounded w-24"></div>
+      <div className="bg-white rounded-2xl shadow-lg border border-gold-300/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-burgundy-600 to-burgundy-700 px-4 sm:px-6 py-4">
+          <div className="h-6 bg-white/20 rounded w-32 animate-pulse"></div>
+        </div>
+        <div className="p-4 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-100 rounded"></div>
+              <div key={i} className="h-16 bg-gray-100 rounded animate-pulse"></div>
             ))}
           </div>
         </div>
@@ -80,37 +82,39 @@ export default function PrayerPreview() {
   }
 
   return (
-    <div className="bg-cream-50/50 rounded-xl border border-gold-300/20 overflow-hidden">
-      {/* Header - more subtle */}
-      <div className="px-4 sm:px-5 py-3 border-b border-gold-300/20">
+    <div className="bg-white rounded-2xl shadow-lg border border-gold-300/20 overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-burgundy-600 to-burgundy-700 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🙏</span>
-            <h3 className="font-serif text-base sm:text-lg text-burgundy-700 tracking-wide">
+          <div>
+            <h3 className="font-serif text-xl sm:text-2xl text-white tracking-wide">
               Prayer Wall
             </h3>
+            <p className="text-white/70 text-sm mt-1">
+              Lift up others in prayer and share your own requests
+            </p>
           </div>
           <Link
             href="/prayer-requests"
-            className="text-xs text-burgundy-600 hover:text-burgundy-700 transition-colors flex items-center gap-1"
+            className="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1"
           >
             View all
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
       </div>
 
-      {/* Prayer Requests - compact grid layout */}
-      <div className="p-3 sm:p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
+      {/* Prayer Requests */}
+      <div className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {requests.map((request) => (
             <div
               key={request.id}
-              className="bg-white rounded-lg border border-gold-300/20 p-2.5"
+              className="bg-cream-50 rounded-xl border border-gold-300/30 p-3 hover:shadow-md transition-shadow"
             >
-              <p className="text-gray-600 text-sm line-clamp-2 mb-2">
+              <p className="text-gray-700 text-sm line-clamp-2 mb-2">
                 "{request.request}"
               </p>
               <div className="flex items-center justify-between">
@@ -120,13 +124,13 @@ export default function PrayerPreview() {
                 <button
                   onClick={() => prayFor(request.id)}
                   disabled={prayedFor.has(request.id)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all duration-200 ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 ${
                     prayedFor.has(request.id)
                       ? 'bg-gold-100 text-gold-700'
-                      : 'bg-cream-100 hover:bg-gold-100 text-burgundy-600'
+                      : 'bg-white hover:bg-gold-100 text-burgundy-600 hover:scale-105'
                   }`}
                 >
-                  <svg className="w-3 h-3" fill={prayedFor.has(request.id) ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-3.5 h-3.5" fill={prayedFor.has(request.id) ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                   <span>{request.prayer_count}</span>
@@ -136,26 +140,26 @@ export default function PrayerPreview() {
           ))}
         </div>
 
-        {/* CTA - subtle inline link */}
-        <div className="mt-3 text-center">
+        {/* CTA */}
+        <div className="mt-4 text-center">
           {session?.user ? (
             <Link
               href="/prayer-requests"
-              className="inline-flex items-center gap-1 text-sm text-burgundy-600 hover:text-burgundy-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-burgundy-600 hover:bg-burgundy-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span>Share a prayer request</span>
+              <span>Share a Prayer Request</span>
             </Link>
           ) : (
             <button
               onClick={() => signIn('google', { callbackUrl: '/prayer-requests' })}
-              className="inline-flex items-center gap-1 text-sm text-burgundy-600 hover:text-burgundy-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-burgundy-600 hover:bg-burgundy-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
-              <span>Sign in to share a prayer request</span>
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <span>Sign in to Share a Prayer Request</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14" />
               </svg>
             </button>
           )}

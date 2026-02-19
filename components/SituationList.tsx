@@ -213,19 +213,21 @@ export default function SituationList({ refreshTrigger, initialSearch, onSearchC
   }
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-2xl shadow-lg border border-gold-300/20 overflow-hidden">
       {/* Header */}
-      <div>
-        <h2 className="font-serif text-3xl text-burgundy-700 tracking-wide mb-3">
+      <div className="bg-gradient-to-r from-burgundy-600 to-burgundy-700 px-4 sm:px-6 py-4">
+        <h2 className="font-serif text-xl sm:text-2xl text-white tracking-wide">
           Community Guidance
         </h2>
-        <p className="text-gray-600 text-lg leading-relaxed mb-6">
-          You are not alone. Browse guidance shared by others who have faced similar challenges.
+        <p className="text-white/70 text-sm mt-1">
+          Browse guidance shared by others who have faced similar challenges
         </p>
       </div>
 
-      {/* Search and Sort Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Content */}
+      <div className="p-4 sm:p-6 space-y-4">
+        {/* Search and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <SearchBar onSearch={handleSearch} initialValue={searchQuery} />
         </div>
@@ -499,6 +501,7 @@ export default function SituationList({ refreshTrigger, initialSearch, onSearchC
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

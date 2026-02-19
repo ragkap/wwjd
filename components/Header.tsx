@@ -22,9 +22,9 @@ export default function Header() {
 
           <button onClick={handleLogoClick} className="flex flex-col items-center hover:opacity-90 transition-opacity">
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Cross Icon - hidden on very small screens */}
+              {/* Cross Icon */}
               <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-burgundy-600 hidden xs:block sm:block"
+                className="w-5 h-5 sm:w-8 sm:h-8 text-burgundy-600"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
